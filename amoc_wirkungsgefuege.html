@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AMOC – Wirkungsgefüge</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --card: #1f2937;
+      --card2: #243447;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --line: #60a5fa;
+      --cause: #1d4ed8;
+      --impact: #0f766e;
+      --feedback: #7c3aed;
+      --core: #b91c1c;
+      --border: rgba(255,255,255,0.15);
+      --shadow: 0 12px 30px rgba(0,0,0,0.35);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: linear-gradient(180deg, #0b1020, var(--bg));
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .title h1 {
+      margin: 0 0 8px 0;
+      font-size: 1.8rem;
+    }
+    .title p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 900px;
+      line-height: 1.45;
+    }
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    button {
+      border: 1px solid var(--border);
+      background: #182235;
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:hover { background: #22314a; }
+    .legend {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin: 12px 0 16px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+    .board {
+      position: relative;
+      height: 980px;
+      background: radial-gradient(circle at top, rgba(96,165,250,0.08), transparent 35%), rgba(17,24,39,0.95);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    svg#links {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .node {
+      position: absolute;
+      width: 250px;
+      min-height: 88px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: linear-gradient(180deg, var(--card2), var(--card));
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      user-select: none;
+      cursor: grab;
+    }
+    .node h3 {
+      margin: 0 0 8px 0;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+    .node p {
+      margin: 0;
+      color: #cbd5e1;
+      font-size: 0.92rem;
+      line-height: 1.35;
+    }
+    .node .mini {
+      display: inline-block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+    .core { border-left: 6px solid var(--core); }
+    .cause { border-left: 6px solid var(--cause); }
+    .impact { border-left: 6px solid var(--impact); }
+    .feedback { border-left: 6px solid var(--feedback); }
+    .sidepanel {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .note {
+      background: rgba(17,24,39,0.92);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 16px;
+    }
+    .note h2 {
+      margin: 0 0 8px 0;
+      font-size: 1rem;
+    }
+    .note p, .note li {
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+    .note ul { margin: 8px 0 0 20px; }
+    code {
+      background: #0b1220;
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 8px;
+      color: #bfdbfe;
+    }
+    @media (max-width: 980px) {
+      .board { height: 1280px; }
+      .sidepanel { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="title">
+        <h1>AMOC-Kollaps – Wirkungsgefüge</h1>
+        <p>
+          Interaktive HTML-Grafik für Obsidian. Du kannst die Karten per Drag-and-drop verschieben; die Pfeile folgen automatisch.
+          Inhaltlich ist das Diagramm als <strong>Szenario eines starken AMOC-Zusammenbruchs</strong> aufgebaut, während die Forschung für das 21. Jahrhundert derzeit vor allem eine <strong>sehr wahrscheinliche Abschwächung</strong> und keinen gesicherten Kollaps projiziert.
+        </p>
+      </div>
+      <div class="controls">
+        <button id="resetBtn">Layout zurücksetzen</button>
+        <button id="toggleHintsBtn">Hinweise ein/aus</button>
+      </div>
+    </div>
+
+    <div class="legend">
+      <span><i class="dot" style="background: var(--cause)"></i> mögliche Auslöser</span>
+      <span><i class="dot" style="background: var(--core)"></i> Kernprozess</span>
+      <span><i class="dot" style="background: var(--impact)"></i> Auswirkungen</span>
+      <span><i class="dot" style="background: var(--feedback)"></i> Rückkopplungen / Unsicherheiten</span>
+    </div>
+
+    <div class="board" id="board">
+      <svg id="links" viewBox="0 0 1500 980" preserveAspectRatio="none">
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#60a5fa"></path>
+          </marker>
+        </defs>
+      </svg>
+
+      <div class="node cause" id="n1" data-x="70" data-y="90">
+        <h3>Anthropogene Erwärmung</h3>
+        <p>Erwärmt Ozean und Atmosphäre und verändert den Dichteantrieb der Umwälzzirkulation.</p>
+        <span class="mini">breiter Hintergrundtreiber</span>
+      </div>
+
+      <div class="node cause" id="n2" data-x="80" data-y="250">
+        <h3>Mehr Süßwasser im Nordatlantik</h3>
+        <p>Durch Grönlandschmelze, stärkeren Niederschlag, Flussabfluss und Meereis-/Eisverlust sinkt der Salzgehalt.</p>
+      </div>
+
+      <div class="node cause" id="n3" data-x="80" data-y="430">
+        <h3>Weniger Tiefenwasserbildung</h3>
+        <p>Wärmeres und frischeres Oberflächenwasser ist leichter und sinkt im subpolaren Nordatlantik schlechter ab.</p>
+      </div>
+
+      <div class="node cause" id="n4" data-x="80" data-y="610">
+        <h3>Schichtung nimmt zu</h3>
+        <p>Stärkere vertikale Stabilität hemmt Durchmischung und Konvektion.</p>
+      </div>
+
+      <div class="node core" id="n5" data-x="575" data-y="340">
+        <h3>AMOC stark geschwächt / Kollaps</h3>
+        <p>Deutlich reduzierte nordwärts gerichtete Wärmetransporte und abgeschwächte Umwälzung im Atlantik.</p>
+      </div>
+
+      <div class="node impact" id="n6" data-x="1010" data-y="70">
+        <h3>Nordatlantik kühlt relativ ab</h3>
+        <p>Das bekannte „warming hole“-Muster kann sich verstärken; Europa erwärmt sich dann weniger stark als ohne AMOC-Schwächung.</p>
+      </div>
+
+      <div class="node impact" id="n7" data-x="1010" data-y="240">
+        <h3>Niederschlagsgürtel / ITCZ verschieben sich</h3>
+        <p>Die tropische Regenzone kann sich nach Süden verlagern; regionale Niederschlagsmuster ändern sich.</p>
+      </div>
+
+      <div class="node impact" id="n8" data-x="1010" data-y="420">
+        <h3>Mehr dynamischer Meeresspiegel an der US-Ostküste</h3>
+        <p>Wenn der AMOC-Beitrag zum Golfstrom schwächer wird, steigt dort regional der Meeresspiegel.</p>
+      </div>
+
+      <div class="node impact" id="n9" data-x="1010" data-y="590">
+        <h3>Ökosysteme, Fischerei, Kohlenstoffaufnahme</h3>
+        <p>Änderungen in Temperatur, Nährstofftransport und Zirkulation wirken auf marine Ökosysteme und die CO₂-Aufnahme des Ozeans.</p>
+      </div>
+
+      <div class="node feedback" id="n10" data-x="1180" data-y="785">
+        <h3>Rückkopplungen und Kippelemente</h3>
+        <p>Mehr Grönlandschmelze kann die Süßwasserzufuhr weiter erhöhen; genaue Schwellen und Zeiten bleiben unsicher.</p>
+      </div>
+
+      <div class="node feedback" id="n11" data-x="550" data-y="770">
+        <h3>Klimatische Fernwirkungen</h3>
+        <p>Telekonnektionen können Sturmbahnen, Monsune und teils ENSO-bezogene Muster beeinflussen.</p>
+      </div>
+
+      <div class="node feedback" id="n12" data-x="340" data-y="770">
+        <h3>Wichtige Einordnung</h3>
+        <p>Für dieses Jahrhundert gilt eine Abschwächung als sehr wahrscheinlich; ein vollständiger Kollaps ist nach IPCC nicht das zentrale Projektionsergebnis.</p>
+      </div>
+    </div>
+
+    <div class="sidepanel" id="hintsPanel">
+      <div class="note">
+        <h2>So nutzt du die Datei in Obsidian</h2>
+        <ul>
+          <li>Speichere die HTML-Datei in deinem Vault, z. B. <code>attachments/amoc_wirkungsgefuege.html</code>.</li>
+          <li>Verlinkung in einer Note: <code>[AMOC-Wirkungsgefüge](attachments/amoc_wirkungsgefuege.html)</code></li>
+          <li>Oder Einbettung per Iframe in Obsidian-HTML-Plugins / über Publish-kompatible Wege.</li>
+          <li>Du kannst Texte im HTML direkt anpassen und weitere Knoten ergänzen.</li>
+        </ul>
+      </div>
+      <div class="note">
+        <h2>Inhaltliche Logik</h2>
+        <p>
+          Das Schema trennt <strong>Auslöser</strong>, <strong>Kernprozess</strong>, <strong>Folgen</strong> und <strong>Rückkopplungen</strong>.
+          Damit eignet es sich gut als Ausgangspunkt für ein Seminar, eine Masterarbeitsnotiz oder eine Systemanalyse.
+        </p>
+        <p>
+          Falls du möchtest, kann man daraus im nächsten Schritt auch eine zweite Version bauen mit <strong>+/− Pfeilen</strong>,
+          echten <strong>Rückkopplungsschleifen</strong> und einer stärkeren Fokussierung auf <strong>Europa</strong>, <strong>Grönland</strong>
+          oder <strong>globale Telekonnektionen</strong>.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const board = document.getElementById('board');
+    const svg = document.getElementById('links');
+    const resetBtn = document.getElementById('resetBtn');
+    const toggleHintsBtn = document.getElementById('toggleHintsBtn');
+    const hintsPanel = document.getElementById('hintsPanel');
+
+    const edges = [
+      ['n1','n2'], ['n1','n3'], ['n2','n3'], ['n2','n4'], ['n3','n5'], ['n4','n5'],
+      ['n5','n6'], ['n5','n7'], ['n5','n8'], ['n5','n9'], ['n5','n10'], ['n5','n11'],
+      ['n10','n2'], ['n12','n5']
+    ];
+
+    const initial = {};
+    document.querySelectorAll('.node').forEach(node => {
+      const x = parseFloat(node.dataset.x);
+      const y = parseFloat(node.dataset.y);
+      initial[node.id] = { x, y };
+      setPos(node, x, y);
+      makeDraggable(node);
+    });
+
+    function setPos(el, x, y) {
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+      el.dataset.cx = x;
+      el.dataset.cy = y;
+    }
+
+    function centerOf(el) {
+      return {
+        x: parseFloat(el.dataset.cx) + el.offsetWidth / 2,
+        y: parseFloat(el.dataset.cy) + el.offsetHeight / 2
+      };
+    }
+
+    function drawEdges() {
+      svg.querySelectorAll('.edge').forEach(e => e.remove());
+      edges.forEach(([a,b]) => {
+        const A = centerOf(document.getElementById(a));
+        const B = centerOf(document.getElementById(b));
+        const dx = B.x - A.x;
+        const curve = Math.max(30, Math.abs(dx) * 0.18);
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('class', 'edge');
+        path.setAttribute('d', `M ${A.x} ${A.y} C ${A.x + curve} ${A.y}, ${B.x - curve} ${B.y}, ${B.x} ${B.y}`);
+        path.setAttribute('stroke', '#60a5fa');
+        path.setAttribute('stroke-width', '2.8');
+        path.setAttribute('fill', 'none');
+        path.setAttribute('opacity', '0.9');
+        path.setAttribute('marker-end', 'url(#arrow)');
+        svg.appendChild(path);
+      });
+    }
+
+    function makeDraggable(el) {
+      let dragging = false, offsetX = 0, offsetY = 0;
+
+      const onMouseMove = (e) => {
+        if (!dragging) return;
+        const rect = board.getBoundingClientRect();
+        let x = e.clientX - rect.left - offsetX;
+        let y = e.clientY - rect.top - offsetY;
+        x = Math.max(10, Math.min(rect.width - el.offsetWidth - 10, x));
+        y = Math.max(10, Math.min(rect.height - el.offsetHeight - 10, y));
+        setPos(el, x, y);
+        drawEdges();
+      };
+
+      const stopDragging = () => {
+        dragging = false;
+        el.style.cursor = 'grab';
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', stopDragging);
+      };
+
+      el.addEventListener('mousedown', (e) => {
+        dragging = true;
+        el.style.cursor = 'grabbing';
+        const rect = el.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', stopDragging);
+      });
+    }
+
+    resetBtn.addEventListener('click', () => {
+      Object.entries(initial).forEach(([id, pos]) => setPos(document.getElementById(id), pos.x, pos.y));
+      drawEdges();
+    });
+
+    toggleHintsBtn.addEventListener('click', () => {
+      hintsPanel.style.display = hintsPanel.style.display === 'none' ? 'grid' : 'none';
+    });
+
+    window.addEventListener('resize', drawEdges);
+    setTimeout(drawEdges, 60);
+  </script>
+</body>
+</html>
