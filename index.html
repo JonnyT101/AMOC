@@ -23,6 +23,7 @@
     }
 
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       font-family: Inter, Arial, Helvetica, sans-serif;
@@ -38,10 +39,35 @@
       top: 0;
       z-index: 5;
     }
+
     h1 {
       margin: 0 0 6px 0;
       font-size: 1.35rem;
     }
+
+    .nav {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 10px 0 12px 0;
+    }
+
+    .nav a {
+      text-decoration: none;
+      font-weight: 600;
+      color: #1f2937;
+      background: #eef2ff;
+      padding: 7px 12px;
+      border-radius: 10px;
+      border: 1px solid #c7d2fe;
+      transition: background 0.15s ease, transform 0.08s ease;
+    }
+
+    .nav a:hover {
+      background: #dbeafe;
+      transform: translateY(-1px);
+    }
+
     .subtitle {
       color: var(--muted);
       line-height: 1.45;
@@ -56,6 +82,7 @@
       margin-top: 12px;
       align-items: center;
     }
+
     button {
       border: 1px solid var(--border);
       background: #fff;
@@ -65,7 +92,10 @@
       cursor: pointer;
       box-shadow: 0 2px 6px rgba(0,0,0,0.04);
     }
-    button:hover { background: #f8fafc; }
+
+    button:hover {
+      background: #f8fafc;
+    }
 
     .legend {
       display: flex;
@@ -75,11 +105,13 @@
       color: var(--muted);
       font-size: 0.9rem;
     }
+
     .legend span {
       display: inline-flex;
       align-items: center;
       gap: 8px;
     }
+
     .swatch {
       width: 12px;
       height: 12px;
@@ -87,6 +119,7 @@
       border: 1px solid rgba(0,0,0,0.15);
       display: inline-block;
     }
+
     .plus, .minus {
       padding: 0 6px;
       border-radius: 999px;
@@ -95,12 +128,13 @@
       font-size: 0.85rem;
       line-height: 1.4;
     }
+
     .plus { background: var(--positive); }
     .minus { background: var(--negative); }
 
     .canvas-wrap {
       position: relative;
-      height: calc(100vh - 154px);
+      height: calc(100vh - 190px);
       min-height: 720px;
       overflow: auto;
       background-image:
@@ -134,6 +168,7 @@
       pointer-events: none;
       background: rgba(255,255,255,0.18);
     }
+
     .zone-label {
       position: absolute;
       top: 8px;
@@ -160,23 +195,40 @@
       transition: transform 0.08s ease, box-shadow 0.12s ease;
       background: var(--panel);
     }
-    .node:active { cursor: grabbing; }
+
+    .node:active {
+      cursor: grabbing;
+    }
+
     .node.dragging {
       transform: scale(1.02);
       box-shadow: 0 18px 36px rgba(15, 23, 42, 0.18);
       z-index: 4;
     }
+
+    .node.clickable {
+      cursor: pointer;
+      outline: 2px solid rgba(59, 130, 246, 0.15);
+    }
+
+    .node.clickable:hover {
+      box-shadow: 0 18px 36px rgba(15, 23, 42, 0.18);
+      transform: translateY(-2px);
+    }
+
     .node h3 {
       margin: 0 0 6px 0;
       font-size: 1rem;
       line-height: 1.25;
     }
+
     .node p {
       margin: 0;
       font-size: 0.88rem;
       line-height: 1.35;
       color: #334155;
     }
+
     .trigger { background: var(--trigger); }
     .process { background: var(--process); }
     .impact { background: var(--impact); }
@@ -212,25 +264,45 @@
       font-size: 0.9rem;
       line-height: 1.5;
     }
+
     code {
       background: #eef2ff;
       border-radius: 6px;
       padding: 1px 5px;
       color: #312e81;
     }
+
+    @media (max-width: 900px) {
+      .legend {
+        margin-left: 0;
+      }
+
+      .canvas-wrap {
+        height: calc(100vh - 250px);
+      }
+    }
   </style>
 </head>
 <body>
   <header>
     <h1>AMOC – interaktives Wirkungsgefüge</h1>
+
+    <nav class="nav">
+      <a href="index.html">Overview</a>
+      <a href="feedback_loops.html">Feedback loops</a>
+      <a href="climate_impacts.html">Climate impacts</a>
+    </nav>
+
     <div class="subtitle">
       Ziehe die Knoten mit der Maus. Grün markierte Kanten bedeuten eine verstärkende/gleichgerichtete Beziehung (+), rot markierte Kanten eine gegenläufige Beziehung (−).
       Inhaltlich orientiert sich das Diagramm an etablierten AMOC-Mechanismen aus dem IPCC AR6: Erwärmung und Süßwassereintrag verringern die Dichte im subpolaren Nordatlantik, schwächen Tiefenwasserbildung und damit die AMOC; Folgen betreffen u. a. Wärmetransport, regionale Temperaturen, Niederschläge, dynamischen Meeresspiegel und Ökosysteme.
     </div>
+
     <div class="toolbar">
       <button id="resetBtn">Standardlayout zurücksetzen</button>
       <button id="saveBtn">Aktuelles Layout lokal speichern</button>
       <button id="clearBtn">Gespeichertes Layout löschen</button>
+
       <div class="legend">
         <span><i class="swatch" style="background: var(--trigger)"></i> Auslöser</span>
         <span><i class="swatch" style="background: var(--process)"></i> Kernprozess</span>
@@ -298,42 +370,42 @@
         <p>Weniger dichtes Wasser reduziert das Absinken im subpolaren Nordatlantik.</p>
       </div>
 
-      <div class="node process" id="amoc" data-x="820" data-y="375">
+      <div class="node process clickable" id="amoc" data-x="820" data-y="375" onclick="location.href='feedback_loops.html'">
         <h3>AMOC-Stärke ↓</h3>
         <p>Abgeschwächte meridionale Umwälzzirkulation und geringerer Nordwärts-Wärmetransport.</p>
       </div>
 
-      <div class="node impact" id="heat" data-x="1170" data-y="120">
+      <div class="node impact clickable" id="heat" data-x="1170" data-y="120" onclick="location.href='climate_impacts.html'">
         <h3>Wärmetransport in den Nordatlantik ↓</h3>
         <p>Der Nordatlantik und Teile Europas können relativ kühler werden.</p>
       </div>
 
-      <div class="node impact" id="rainbelt" data-x="1180" data-y="300">
+      <div class="node impact clickable" id="rainbelt" data-x="1180" data-y="300" onclick="location.href='climate_impacts.html'">
         <h3>Niederschlagsmuster / ITCZ verschieben sich</h3>
         <p>Tropische Regenbänder und Monsunsysteme können sich verlagern.</p>
       </div>
 
-      <div class="node impact" id="sealevel" data-x="1185" data-y="495">
+      <div class="node impact clickable" id="sealevel" data-x="1185" data-y="495" onclick="location.href='climate_impacts.html'">
         <h3>Dynamischer Meeresspiegel an der US-Ostküste ↑</h3>
         <p>Eine schwächere AMOC begünstigt regional höheren Meeresspiegel.</p>
       </div>
 
-      <div class="node impact" id="ecosystems" data-x="1180" data-y="695">
+      <div class="node impact clickable" id="ecosystems" data-x="1180" data-y="695" onclick="location.href='climate_impacts.html'">
         <h3>Marine Ökosysteme & Kohlenstoffaufnahme ändern sich</h3>
         <p>Vermischung, Nährstoffe, Sauerstoff und Kohlenstoffflüsse können sich verschieben.</p>
       </div>
 
-      <div class="node feedback" id="freshfeedback" data-x="1450" data-y="260">
+      <div class="node feedback clickable" id="freshfeedback" data-x="1450" data-y="260" onclick="location.href='feedback_loops.html'">
         <h3>Positive Salinitäts-Rückkopplung</h3>
         <p>Schwächere AMOC transportiert weniger salzreiches Wasser nordwärts → weitere Auffrischung.</p>
       </div>
 
-      <div class="node feedback" id="europecool" data-x="1450" data-y="95">
+      <div class="node feedback clickable" id="europecool" data-x="1450" data-y="95" onclick="location.href='climate_impacts.html'">
         <h3>Regionale Abkühlung im Nordatlantik</h3>
         <p>Kann einige Prozesse lokal dämpfen, kompensiert aber den Treiber nicht vollständig.</p>
       </div>
 
-      <div class="node feedback" id="uncertainty" data-x="1450" data-y="585">
+      <div class="node feedback clickable" id="uncertainty" data-x="1450" data-y="585" onclick="location.href='feedback_loops.html'">
         <h3>Nichtlinearität / Kipprisiko</h3>
         <p>Näher an Schwellenwerten können kleine Zusatzstörungen große Reaktionen auslösen.</p>
       </div>
@@ -450,11 +522,13 @@
 
     function drawEdges() {
       svg.querySelectorAll('.edge, .edge-label').forEach(el => el.remove());
-      edges.forEach((edge, idx) => {
+
+      edges.forEach((edge) => {
         const from = document.getElementById(edge.from);
         const to = document.getElementById(edge.to);
         const a = centerOf(from);
         const b = centerOf(to);
+
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', edgePath(a, b));
         path.setAttribute('fill', 'none');
@@ -463,6 +537,7 @@
 
         let color = '#475569';
         let marker = 'url(#arrow-gray)';
+
         if (edge.sign === 'plus') {
           color = '#15803d';
           marker = 'url(#arrow-green)';
@@ -470,6 +545,7 @@
           color = '#b91c1c';
           marker = 'url(#arrow-red)';
         }
+
         path.setAttribute('stroke', color);
         path.setAttribute('marker-end', marker);
         path.setAttribute('opacity', '0.95');
@@ -477,6 +553,7 @@
 
         const mx = (a.x + b.x) / 2;
         const my = (a.y + b.y) / 2 - 8;
+
         const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         label.setAttribute('x', mx);
         label.setAttribute('y', my);
@@ -489,15 +566,26 @@
     }
 
     function enableDragging(node) {
-      let startX = 0, startY = 0, nodeStartX = 0, nodeStartY = 0, dragging = false;
+      let startX = 0;
+      let startY = 0;
+      let nodeStartX = 0;
+      let nodeStartY = 0;
+      let dragging = false;
+      let moved = false;
 
       const onPointerMove = (e) => {
         if (!dragging) return;
-        const rect = diagram.getBoundingClientRect();
+
         const x = nodeStartX + (e.clientX - startX);
         const y = nodeStartY + (e.clientY - startY);
+
         const clampedX = Math.max(10, Math.min(diagram.clientWidth - node.offsetWidth - 10, x));
         const clampedY = Math.max(10, Math.min(diagram.clientHeight - node.offsetHeight - 10, y));
+
+        if (Math.abs(e.clientX - startX) > 4 || Math.abs(e.clientY - startY) > 4) {
+          moved = true;
+        }
+
         setNodePosition(node, clampedX, clampedY);
         drawEdges();
       };
@@ -505,21 +593,39 @@
       const onPointerUp = () => {
         dragging = false;
         node.classList.remove('dragging');
+
         window.removeEventListener('pointermove', onPointerMove);
         window.removeEventListener('pointerup', onPointerUp);
+
+        setTimeout(() => {
+          moved = false;
+        }, 0);
       };
 
       node.addEventListener('pointerdown', (e) => {
         dragging = true;
+        moved = false;
         node.classList.add('dragging');
+
         startX = e.clientX;
         startY = e.clientY;
         nodeStartX = Number(node.dataset.x);
         nodeStartY = Number(node.dataset.y);
+
         node.setPointerCapture?.(e.pointerId);
+
         window.addEventListener('pointermove', onPointerMove);
         window.addEventListener('pointerup', onPointerUp);
       });
+
+      if (node.classList.contains('clickable')) {
+        node.addEventListener('click', (e) => {
+          if (moved) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        });
+      }
     }
 
     nodes.forEach(enableDragging);
