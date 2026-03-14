@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AMOC – Feedback Loops</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --grid: #d9e1ee;
+      --trigger: #dbeafe;
+      --process: #e9f7ef;
+      --impact: #fff1cc;
+      --feedback: #fce7f3;
+      --border: #94a3b8;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+      --positive: #15803d;
+      --negative: #b91c1c;
+      --neutral: #334155;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      padding: 18px 22px 10px;
+      border-bottom: 1px solid #e5e7eb;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+
+    h1 {
+      margin: 0 0 6px 0;
+      font-size: 1.35rem;
+    }
+
+    .nav {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 10px 0 12px 0;
+    }
+
+    .nav a {
+      text-decoration: none;
+      font-weight: 600;
+      color: #1f2937;
+      background: #eef2ff;
+      padding: 7px 12px;
+      border-radius: 10px;
+      border: 1px solid #c7d2fe;
+      transition: background 0.15s ease, transform 0.08s ease;
+    }
+
+    .nav a:hover {
+      background: #dbeafe;
+      transform: translateY(-1px);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      line-height: 1.45;
+      max-width: 1100px;
+      font-size: 0.95rem;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+      align-items: center;
+    }
+
+    button {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    }
+
+    button:hover {
+      background: #f8fafc;
+    }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-left: auto;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,0.15);
+      display: inline-block;
+    }
+
+    .plus, .minus, .pm {
+      padding: 0 6px;
+      border-radius: 999px;
+      font-weight: 700;
+      color: white;
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+
+    .plus { background: var(--positive); }
+    .minus { background: var(--negative); }
+    .pm { background: var(--neutral); }
+
+    .canvas-wrap {
+      position: relative;
+      height: calc(100vh - 190px);
+      min-height: 720px;
+      overflow: auto;
+      background-image:
+        linear-gradient(to right, var(--grid) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+
+    #diagram {
+      position: relative;
+      width: 1650px;
+      height: 1050px;
+      margin: 0 auto;
+    }
+
+    svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    .zone {
+      position: absolute;
+      top: 26px;
+      bottom: 26px;
+      border: 2px dashed rgba(71, 85, 105, 0.25);
+      border-radius: 18px;
+      pointer-events: none;
+      background: rgba(255,255,255,0.18);
+    }
+
+    .zone-label {
+      position: absolute;
+      top: 8px;
+      left: 14px;
+      padding: 5px 10px;
+      font-weight: 700;
+      color: #334155;
+      background: rgba(255,255,255,0.82);
+      border: 1px solid rgba(71,85,105,0.15);
+      border-radius: 999px;
+      font-size: 0.86rem;
+    }
+
+    .node {
+      position: absolute;
+      width: 240px;
+      min-height: 86px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1.5px solid var(--border);
+      box-shadow: var(--shadow);
+      cursor: grab;
+      user-select: none;
+      transition: transform 0.08s ease, box-shadow 0.12s ease;
+      background: var(--panel);
+    }
+
+    .node:active { cursor: grabbing; }
+
+    .node.dragging {
+      transform: scale(1.02);
+      box-shadow: 0 18px 36px rgba(15, 23, 42, 0.18);
+      z-index: 4;
+    }
+
+    .node.clickable {
+      cursor: pointer;
+      outline: 2px solid rgba(59, 130, 246, 0.15);
+    }
+
+    .node.clickable:hover {
+      box-shadow: 0 18px 36px rgba(15, 23, 42, 0.18);
+      transform: translateY(-2px);
+    }
+
+    .node h3 {
+      margin: 0 0 6px 0;
+      font-size: 1rem;
+      line-height: 1.25;
+    }
+
+    .node p {
+      margin: 0;
+      font-size: 0.88rem;
+      line-height: 1.35;
+      color: #334155;
+    }
+
+    .trigger { background: var(--trigger); }
+    .process { background: var(--process); }
+    .impact { background: var(--impact); }
+    .feedback { background: var(--feedback); }
+
+    .small-note {
+      position: absolute;
+      right: 20px;
+      bottom: 18px;
+      background: rgba(255,255,255,0.95);
+      border: 1px solid #d1d5db;
+      border-radius: 14px;
+      padding: 10px 12px;
+      color: var(--muted);
+      max-width: 330px;
+      font-size: 0.85rem;
+      line-height: 1.45;
+      box-shadow: var(--shadow);
+    }
+
+    .edge-label {
+      font-size: 13px;
+      font-weight: 700;
+      paint-order: stroke;
+      stroke: white;
+      stroke-width: 4px;
+      stroke-linejoin: round;
+    }
+
+    .footer-note {
+      padding: 12px 20px 20px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 900px) {
+      .legend { margin-left: 0; }
+      .canvas-wrap { height: calc(100vh - 250px); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AMOC – Feedback loops</h1>
+
+    <nav class="nav">
+      <a href="index.html">Overview</a>
+      <a href="feedback_loops.html">Feedback loops</a>
+      <a href="climate_impacts.html">Climate impacts</a>
+    </nav>
+
+    <div class="subtitle">
+      Diese Seite zeigt vereinfachte Rückkopplungen rund um eine schwächere AMOC. Besonders wichtig ist die positive Salinitäts-Rückkopplung:
+      Eine schwächere AMOC transportiert weniger salzreiches Wasser nach Norden, wodurch die Oberflächengewässer frischer werden und die Tiefenwasserbildung weiter geschwächt werden kann.
+    </div>
+
+    <div class="toolbar">
+      <button id="resetBtn">Standardlayout zurücksetzen</button>
+      <button id="saveBtn">Aktuelles Layout lokal speichern</button>
+      <button id="clearBtn">Gespeichertes Layout löschen</button>
+
+      <div class="legend">
+        <span><i class="swatch" style="background: var(--trigger)"></i> Ausgangspunkt</span>
+        <span><i class="swatch" style="background: var(--process)"></i> Prozess</span>
+        <span><i class="swatch" style="background: var(--feedback)"></i> Rückkopplung</span>
+        <span><i class="plus">+</i> gleichgerichtet</span>
+        <span><i class="minus">−</i> gegenläufig</span>
+        <span><i class="pm">±</i> gemischt/komplex</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="canvas-wrap">
+    <div id="diagram">
+      <div class="zone" style="left: 30px; width: 360px;"><div class="zone-label">Ausgangspunkt</div></div>
+      <div class="zone" style="left: 430px; width: 350px;"><div class="zone-label">Zwischenprozesse</div></div>
+      <div class="zone" style="left: 820px; width: 350px;"><div class="zone-label">Rückkopplungen</div></div>
+      <div class="zone" style="left: 1210px; width: 390px;"><div class="zone-label">Systemverhalten</div></div>
+
+      <svg id="edges" aria-hidden="true">
+        <defs>
+          <marker id="arrow-green" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+            <path d="M0,0 L12,6 L0,12 z" fill="#15803d"></path>
+          </marker>
+          <marker id="arrow-red" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+            <path d="M0,0 L12,6 L0,12 z" fill="#b91c1c"></path>
+          </marker>
+          <marker id="arrow-gray" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+            <path d="M0,0 L12,6 L0,12 z" fill="#475569"></path>
+          </marker>
+        </defs>
+      </svg>
+
+      <div class="node trigger clickable" id="amoc" data-x="80" data-y="390" onclick="location.href='index.html'">
+        <h3>AMOC-Stärke ↓</h3>
+        <p>Ausgangspunkt: abgeschwächte meridionale Umwälzzirkulation.</p>
+      </div>
+
+      <div class="node process" id="salttransport" data-x="480" data-y="220">
+        <h3>Nordwärts-Salztransport ↓</h3>
+        <p>Weniger salzreiches Wasser erreicht den subpolaren Nordatlantik.</p>
+      </div>
+
+      <div class="node process" id="freshening" data-x="480" data-y="520">
+        <h3>Auffrischung der Oberfläche ↑</h3>
+        <p>Die obere Wasserschicht wird frischer und dadurch leichter.</p>
+      </div>
+
+      <div class="node feedback" id="density" data-x="875" data-y="220">
+        <h3>Oberflächendichte ↓</h3>
+        <p>Frischeres Wasser sinkt schlechter ab.</p>
+      </div>
+
+      <div class="node feedback" id="convection" data-x="875" data-y="520">
+        <h3>Tiefenkonvektion ↓</h3>
+        <p>Die Bildung von Tiefenwasser wird weiter gehemmt.</p>
+      </div>
+
+      <div class="node feedback clickable" id="salinityfeedback" data-x="1270" data-y="220" onclick="location.href='index.html'">
+        <h3>Positive Salinitäts-Rückkopplung</h3>
+        <p>Schwächere AMOC → weniger Salztransport → weitere Auffrischung → noch schwächere AMOC.</p>
+      </div>
+
+      <div class="node feedback clickable" id="threshold" data-x="1270" data-y="520" onclick="location.href='climate_impacts.html'">
+        <h3>Nichtlinearität / Kipprisiko</h3>
+        <p>Nahe Schwellenwerten können kleine Zusatzänderungen große Reaktionen auslösen.</p>
+      </div>
+
+      <div class="small-note">
+        Klicke auf <b>AMOC-Stärke ↓</b> oder <b>Positive Salinitäts-Rückkopplung</b>, um zurück zur Übersicht zu wechseln.
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    Vereinfachte Darstellung einer positiven Rückkopplung. In der Realität wirken zusätzlich Wind, Wärmeaustausch, Meereis, Konvektionstiefe und Modellunsicherheiten zusammen.
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'amoc-feedback-layout-v1';
+    const nodes = [...document.querySelectorAll('.node')];
+    const svg = document.getElementById('edges');
+    const diagram = document.getElementById('diagram');
+
+    const edges = [
+      { from: 'amoc', to: 'salttransport', sign: 'plus', label: '+' },
+      { from: 'salttransport', to: 'freshening', sign: 'minus', label: '−' },
+      { from: 'freshening', to: 'density', sign: 'minus', label: '−' },
+      { from: 'density', to: 'convection', sign: 'plus', label: '+' },
+      { from: 'convection', to: 'salinityfeedback', sign: 'plus', label: '+' },
+      { from: 'salinityfeedback', to: 'amoc', sign: 'minus', label: '−' },
+      { from: 'convection', to: 'threshold', sign: 'minus', label: '−' },
+      { from: 'threshold', to: 'amoc', sign: 'minus', label: '−' }
+    ];
+
+    const defaults = {};
+    nodes.forEach(node => {
+      defaults[node.id] = {
+        x: Number(node.dataset.x),
+        y: Number(node.dataset.y)
+      };
+    });
+
+    function setNodePosition(node, x, y) {
+      node.style.left = `${x}px`;
+      node.style.top = `${y}px`;
+      node.dataset.x = x;
+      node.dataset.y = y;
+    }
+
+    function loadLayout() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        nodes.forEach(node => {
+          const pos = saved[node.id] || defaults[node.id];
+          setNodePosition(node, pos.x, pos.y);
+        });
+      } catch {
+        nodes.forEach(node => {
+          const pos = defaults[node.id];
+          setNodePosition(node, pos.x, pos.y);
+        });
+      }
+    }
+
+    function saveLayout() {
+      const layout = {};
+      nodes.forEach(node => {
+        layout[node.id] = {
+          x: Number(node.dataset.x),
+          y: Number(node.dataset.y)
+        };
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(layout));
+      alert('Layout im Browser lokal gespeichert.');
+    }
+
+    function clearLayout() {
+      localStorage.removeItem(STORAGE_KEY);
+      resetLayout();
+    }
+
+    function resetLayout() {
+      nodes.forEach(node => {
+        const pos = defaults[node.id];
+        setNodePosition(node, pos.x, pos.y);
+      });
+      drawEdges();
+    }
+
+    function centerOf(el) {
+      return {
+        x: Number(el.dataset.x) + el.offsetWidth / 2,
+        y: Number(el.dataset.y) + el.offsetHeight / 2
+      };
+    }
+
+    function edgePath(a, b) {
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const curve = Math.max(50, Math.min(150, Math.abs(dx) * 0.22 + Math.abs(dy) * 0.12));
+      const c1x = a.x + curve;
+      const c1y = a.y;
+      const c2x = b.x - curve;
+      const c2y = b.y;
+      return `M ${a.x} ${a.y} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${b.x} ${b.y}`;
+    }
+
+    function drawEdges() {
+      svg.querySelectorAll('.edge, .edge-label').forEach(el => el.remove());
+
+      edges.forEach(edge => {
+        const from = document.getElementById(edge.from);
+        const to = document.getElementById(edge.to);
+        const a = centerOf(from);
+        const b = centerOf(to);
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', edgePath(a, b));
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke-width', '3.2');
+        path.setAttribute('class', 'edge');
+
+        let color = '#475569';
+        let marker = 'url(#arrow-gray)';
+
+        if (edge.sign === 'plus') {
+          color = '#15803d';
+          marker = 'url(#arrow-green)';
+        } else if (edge.sign === 'minus') {
+          color = '#b91c1c';
+          marker = 'url(#arrow-red)';
+        }
+
+        path.setAttribute('stroke', color);
+        path.setAttribute('marker-end', marker);
+        path.setAttribute('opacity', '0.95');
+        svg.appendChild(path);
+
+        const mx = (a.x + b.x) / 2;
+        const my = (a.y + b.y) / 2 - 8;
+
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', mx);
+        label.setAttribute('y', my);
+        label.setAttribute('text-anchor', 'middle');
+        label.setAttribute('class', 'edge-label');
+        label.setAttribute('fill', color);
+        label.textContent = edge.label;
+        svg.appendChild(label);
+      });
+    }
+
+    function enableDragging(node) {
+      let startX = 0, startY = 0, nodeStartX = 0, nodeStartY = 0, dragging = false, moved = false;
+
+      const onPointerMove = (e) => {
+        if (!dragging) return;
+
+        const x = nodeStartX + (e.clientX - startX);
+        const y = nodeStartY + (e.clientY - startY);
+
+        const clampedX = Math.max(10, Math.min(diagram.clientWidth - node.offsetWidth - 10, x));
+        const clampedY = Math.max(10, Math.min(diagram.clientHeight - node.offsetHeight - 10, y));
+
+        if (Math.abs(e.clientX - startX) > 4 || Math.abs(e.clientY - startY) > 4) moved = true;
+
+        setNodePosition(node, clampedX, clampedY);
+        drawEdges();
+      };
+
+      const onPointerUp = () => {
+        dragging = false;
+        node.classList.remove('dragging');
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
+        setTimeout(() => { moved = false; }, 0);
+      };
+
+      node.addEventListener('pointerdown', (e) => {
+        dragging = true;
+        moved = false;
+        node.classList.add('dragging');
+        startX = e.clientX;
+        startY = e.clientY;
+        nodeStartX = Number(node.dataset.x);
+        nodeStartY = Number(node.dataset.y);
+        node.setPointerCapture?.(e.pointerId);
+        window.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', onPointerUp);
+      });
+
+      if (node.classList.contains('clickable')) {
+        node.addEventListener('click', (e) => {
+          if (moved) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        });
+      }
+    }
+
+    nodes.forEach(enableDragging);
+    loadLayout();
+    drawEdges();
+
+    document.getElementById('resetBtn').addEventListener('click', resetLayout);
+    document.getElementById('saveBtn').addEventListener('click', saveLayout);
+    document.getElementById('clearBtn').addEventListener('click', clearLayout);
+    window.addEventListener('resize', drawEdges);
+  </script>
+</body>
+</html>
